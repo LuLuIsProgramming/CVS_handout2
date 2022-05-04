@@ -15,7 +15,7 @@ class IntervalTree {
     ensures ValidSize()
     {
         leaves := n;
-        tree := new int[2*(leaves-1)];
+        tree := new int[2*n-1];
 
     }
 
@@ -24,8 +24,18 @@ class IntervalTree {
     requires 0 <= i < leaves
     requires ValidSize()
     ensures ValidSize()
+    modifies tree
     {
-
+        var m := (tree.Length + 1)/2 + i;
+        while(m > 0)
+            invariant 0 <= m <= i + leaves - 1
+            
+        {
+            tree[m] := tree[m] + v;
+            m := (m - 1) / 2;
+        }
+        tree[0] := tree[0] + v;
+        
     }
     
     //Ranged sum over interval [a,b[
@@ -40,10 +50,10 @@ class IntervalTree {
 
     //Sum of elements over range [a,b[
     function rsum(a: int,b: int) : int
-    requires ValidSize()
+    requires Valid()
     decreases b-a
     requires 0 <= a <= leaves && 0 <= b <= leaves
-    reads this
+    reads this, tree
     {
         if b <= a then 0 else get(b-1)+rsum(a,b-1)
     }
@@ -52,6 +62,12 @@ class IntervalTree {
     reads this, tree
     {
         tree.Length == 2*leaves-1
+    }
+
+    predicate Valid()
+    reads this, tree
+    {
+        tree[i] == tree[2*i + 1] + tree[2*i + 2] && ValidSize()
     }
     
     /*ith element of the sequence, through the array-based
