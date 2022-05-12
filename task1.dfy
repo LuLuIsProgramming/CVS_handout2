@@ -80,7 +80,7 @@ class IntervalTree {
     predicate Valid()
     reads this, tree
     {
-        ValidSize() && if leaves == 1 then true else (forall i :: 0 <= i < leaves - 1 ==> tree[i] == tree[2*i + 1] + tree[2*i + 2])
+        ValidSize() &&  forall i :: 0 <= i < leaves - 1 ==> tree[i] == tree[2*i + 1] + tree[2*i + 2]
     }
     
     /*ith element of the sequence, through the array-based
