@@ -40,24 +40,17 @@ class IntervalTree {
     {
         var m := (tree.Length)/2 + i;
         tree[m] := tree[m] + v;
-        ghost var child := m;
         while(m > 0)
             decreases m
             invariant 0 <= m <= i + leaves - 1
-            //invariant if m < old(m)  then tree[m] == old(tree[m]) else tree[m] == old(tree[m])+v
-            //invariant forall j :: (0 <= j < 2*leaves-1 && j != old(m)) ==> tree[j] == old(tree[j])
-            //invariant forall j :: (0 <= j < 2*leaves-1 && j != m) ==> tree[j] == old(tree[j])
-            invariant forall j :: (leaves - 1 <= j < 2*leaves-1 && j != (tree.Length)/2 + i) ==> tree[j] == old(tree[j])
-            invariant tree[child] == old(tree[child]) + v
-            invariant m > 0 ==> tree[m] == old(tree[m]) + v
+            invariant forall j :: (leaves - 1 <= j < 2*leaves-1) ==> if j != (tree.Length)/2 + i then tree[j] == old(tree[j]) 
+                else tree[j] == old(tree[j] + v)
+            invariant forall k :: (0 <= k < leaves - 1) ==> if (k == (m-1)/2) then tree[k] + v == tree[2 * k+1] + tree[2 * k+2] 
+                else tree[k] == tree[2 * k+1] + tree[2 * k+2]
         {
-            //tree[m] := tree[m] + v;
-            //m := ((m - 1) / 2);
-            child := m;
             m := (m - 1) / 2;
             tree[m] := tree[m] + v;
         }
-        //tree[0] := tree[0] + v;
     }
     
     //Ranged sum over interval [a,b[
@@ -67,17 +60,45 @@ class IntervalTree {
     ensures Valid()
     ensures r == rsum(a,b)
     {
-
+        r := 0;
+        var ra := tree.Length/2 + a;
+        var rb := tree.Length/2 + b;
+        while(ra != rb)
+        decreases rb - ra
+        
+        invariant r == sumArr(ra, (rb+1)*2)
+        {
+            shift(ra,rb,leaves-1);
+            if (ra % 2 == 0)
+            {
+                r := r + tree[ra];
+            }
+            ra := ra / 2;
+            if (rb % 2 == 0)
+            {
+                r := r + tree[rb - 1];
+            }
+            rb := (rb-1)/2;
+        }
     }
 
     //Sum of elements over range [a,b[
     function rsum(a: int,b: int) : int
     requires Valid()
     decreases b-a
-    requires 0 <= a <= leaves && a <= b <= leaves
+    requires 0 <= a <= leaves && 0 <= b <= leaves
     reads this, tree
     {
         if b <= a then 0 else get(b-1)+rsum(a,b-1)
+    }
+
+    //sum of array elements in [a,b[
+    function sumArr(a: int,b: int) : int
+    requires Valid()
+    requires 0 <= a <= tree.Length && 0 <= b <= tree.Length
+    reads this, tree
+    {
+        if b <= a then 0 else tree[b-1]+sumArr(a,b-1)
     }
 
     predicate ValidSize()
@@ -101,5 +122,38 @@ class IntervalTree {
         tree[i + leaves - 1]
     }
 
+    lemma shift(a: int,b: int,c: int)
+    requires Valid() && 0 <= c <= leaves-1
+    requires 0 <= a <= leaves && 0 <= b <= leaves
+    requires forall i :: a <= i < b ==> get(i) == tree[i+c]
+    ensures rsum(a,b) == sumArr(a+c,b+c)
+    decreases b-a
+    {
+        if (c == leaves - 1) 
+        {
+            shift(a+1, b, c);
+        }
+        else 
+        {
+            //bdfghsdfgh
+        }
+        
+    }
+
+    lemma crucial(ra: int,rb: int)
+    requires 0 <= ra <= rb && 2*rb < tree.Length && Valid()
+    ensures sumArr(ra,rb) == sumArr(2*ra+1,2*rb+1)
+    {
+
+    }
+
+    lemma sumArrSwap(ra: int,rb: int)
+    requires Valid()
+    requires 0 <= ra < rb && 0 <= rb <= tree.Length
+    ensures sumArr(ra,rb) == tree[ra]+sumArr(ra+1,rb)
+    {
+        assert sumArr(ra,rb) == tree[ra]+sumArr(ra+1,rb);
+    }
 }
 
+// lemma bruh (OmegaBRUH)
