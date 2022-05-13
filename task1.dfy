@@ -36,6 +36,8 @@ class IntervalTree {
     requires 0 <= i < leaves
     requires Valid()
     ensures Valid()
+    ensures forall j :: (leaves - 1 <= j < 2*leaves-1) ==> if j != (tree.Length)/2 + i then tree[j] == old(tree[j]) 
+                else tree[j] == old(tree[j] + v)
     modifies tree
     {
         var m := (tree.Length)/2 + i;
@@ -151,3 +153,5 @@ class IntervalTree {
         
     }
 }
+
+// lemma bruh ()

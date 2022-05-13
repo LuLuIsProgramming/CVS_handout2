@@ -7,15 +7,19 @@ class IntervalTree {
     the sequence). */
     ghost var leaves: int
 
+    //dynamic frames pattern
+    ghost var Repr : set<object>;
+
     /*Initializes an interval tree for a sequence of n elements whose
     values are 0. */
     constructor(n: int)
     requires n > 0
     ensures leaves == n
-    ensures Valid()
+    ensures Valid() && fresh(Repr - { this })
     {
         leaves := n;
         tree := new int[2*n-1];
+        Repr := {this};
         new;
         var i := 0;
         while(i < tree.Length) 
@@ -28,20 +32,26 @@ class IntervalTree {
             tree[i] := 0;
             i := i + 1;
         }
-
+        Repr := Repr + {tree};
     }
 
     //Updates the i-th sequence element (0-based) by v
     method update(i: int,v: int)
     requires 0 <= i < leaves
     requires Valid()
-    ensures Valid()
-    modifies tree
+    ensures Valid() && Repr == old(Repr) && old(tree).Length == 2 * leaves - 1
+    ensures forall j :: (leaves - 1 <= j < 2*leaves-1) ==> if j != (tree.Length)/2 + i then tree[j] == old(tree[j]) 
+            else tree[j] == old(tree[j] + v)
+    modifies Repr
     {
         var m := (tree.Length)/2 + i;
         tree[m] := tree[m] + v;
         while(m > 0)
             decreases m
+            modifies Repr
+            invariant tree in Repr
+            invariant Repr == old(Repr)
+            invariant ValidSize() && old(tree).Length == 2 * leaves - 1
             invariant 0 <= m <= i + leaves - 1
             invariant forall j :: (leaves - 1 <= j < 2*leaves-1) ==> if j != (tree.Length)/2 + i then tree[j] == old(tree[j]) 
                 else tree[j] == old(tree[j] + v)
@@ -89,7 +99,7 @@ class IntervalTree {
     requires Valid()
     decreases b-a
     requires 0 <= a <= leaves && 0 <= b <= leaves
-    reads this, tree
+    reads this, Repr
     {
         if b <= a then 0 else get(b-1)+rsum(a,b-1)
     }
@@ -98,7 +108,7 @@ class IntervalTree {
     function sumArr(a: int,b: int) : int
     requires Valid()
     requires 0 <= a <= tree.Length && 0 <= b <= tree.Length
-    reads this, tree
+    reads this, Repr
     {
         if b <= a then 0 else tree[b-1]+sumArr(a,b-1)
     }
@@ -110,8 +120,9 @@ class IntervalTree {
     }
 
     predicate Valid()
-    reads this, tree
+    reads this, Repr
     {
+        this in Repr && tree in Repr &&
         ValidSize() &&  forall i :: 0 <= i < leaves - 1 ==> tree[i] == tree[2*i + 1] + tree[2*i + 2]
     }
     
@@ -151,5 +162,3 @@ class IntervalTree {
         
     }
 }
-
-// lemma bruh (OmegaBRUH)
