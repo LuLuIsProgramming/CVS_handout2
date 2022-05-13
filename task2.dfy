@@ -151,3 +151,5 @@ class IntervalTree {
         
     }
 }
+
+// lemma bruh (OmegaBRUH)
