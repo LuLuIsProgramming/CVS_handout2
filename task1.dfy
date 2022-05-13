@@ -40,17 +40,21 @@ class IntervalTree {
     {
         var m := (tree.Length)/2 + i;
         tree[m] := tree[m] + v;
-        ghost var set setB := {};
+        ghost var child := m;
         while(m > 0)
+            decreases m
             invariant 0 <= m <= i + leaves - 1
             //invariant if m < old(m)  then tree[m] == old(tree[m]) else tree[m] == old(tree[m])+v
             //invariant forall j :: (0 <= j < 2*leaves-1 && j != old(m)) ==> tree[j] == old(tree[j])
-            invariant forall j :: (0 <= j < 2*leaves-1 && j != m) ==> tree[j] == old(tree[j])
+            //invariant forall j :: (0 <= j < 2*leaves-1 && j != m) ==> tree[j] == old(tree[j])
+            invariant forall j :: (leaves - 1 <= j < 2*leaves-1 && j != (tree.Length)/2 + i) ==> tree[j] == old(tree[j])
+            invariant tree[child] == old(tree[child]) + v
             invariant m > 0 ==> tree[m] == old(tree[m]) + v
         {
             //tree[m] := tree[m] + v;
             //m := ((m - 1) / 2);
-            m := ((m - 1) / 2);
+            child := m;
+            m := (m - 1) / 2;
             tree[m] := tree[m] + v;
         }
         //tree[0] := tree[0] + v;
